@@ -8,6 +8,7 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{ Flow, Sink, Source }
+import com.stomp.ws.parser.StompMessage
 
 trait WsRoutes {
 
@@ -17,9 +18,11 @@ trait WsRoutes {
   def ws: Flow[Message, Message, Any] = Flow[Message].mapConcat {
     case tm: TextMessage =>
       implicit val mat = ActorMaterializer()
-      tm.textStream.runForeach(x => println(s"receiving: $x"))
-      println(s"text message received ${tm.textStream}")
-      TextMessage(Source.single("Hello ") ++ tm.textStream ++ Source.single("!!!")) :: Nil
+      val res: Source[String, _] = tm.textStream
+        .via(StompMessage.unmarshall)
+        .via(StompMessage.process)
+        .via(StompMessage.marshall)
+      TextMessage(res) :: Nil
     case bm: BinaryMessage => {
       println("binary message received")
       implicit val mat = ActorMaterializer()
