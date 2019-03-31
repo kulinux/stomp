@@ -15,26 +15,30 @@ trait WsRoutes {
   // we leave these abstract, since they will be provided by the App
   implicit def system: ActorSystem
 
-  def ws: Flow[Message, Message, Any] = Flow[Message].mapConcat {
-    case tm: TextMessage =>
-      implicit val mat = ActorMaterializer()
-      val res: Source[String, _] = tm.textStream
-        .via(StompMessage.unmarshall)
-        .via(StompMessage.process)
-        .via(StompMessage.marshall)
-      TextMessage(res) :: Nil
-    case bm: BinaryMessage => {
-      println("binary message received")
-      implicit val mat = ActorMaterializer()
-      bm.dataStream.runWith(Sink.ignore)
-      Nil
-    }
-    case unknow => {
-      println("unknow message")
-      Nil
-    }
+  def ws: Flow[Message, Message, Any] = Flow[Message]
+    .map {
+      case tm: TextMessage =>
+        implicit val mat = ActorMaterializer()
+        val res: Source[String, _] = tm.textStream
+          .via(StompMessage.unmarshall)
+          .via(StompMessage.process)
+          .filter(p => p.isDefined)
+          .map(p => p.get)
+          .via(StompMessage.marshall)
 
-  }
+        TextMessage(res)
+      case bm: BinaryMessage => {
+        println("binary message received")
+        implicit val mat = ActorMaterializer()
+        bm.dataStream.runWith(Sink.ignore)
+        ???
+      }
+      case unknow => {
+        println("unknow message")
+        ???
+      }
+
+    }
 
   val requestHandler: HttpRequest => HttpResponse = {
     case req @ HttpRequest(HttpMethods.GET, Uri.Path("/ws"), _, _, _) =>

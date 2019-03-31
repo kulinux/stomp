@@ -4,8 +4,10 @@
         <script>
             var url = 'ws://localhost:8080/ws';
             var client = Stomp.client(url);
-            client.connect('login', 'pwd');
-            client.send('destination', {}, 'Body, body, body');
+            client.connect('login', 'pwd', function() {
+                console.log('connected!!!!');
+                client.send('destination', {}, 'Body, body, body');
+            });
         </script>
     </head>
 </html>
