@@ -1,5 +1,5 @@
-lazy val akkaHttpVersion = "10.1.7"
-lazy val akkaVersion    = "2.5.21"
+lazy val akkaHttpVersion = "10.1.8"
+lazy val akkaVersion    = "2.5.22"
 
 lazy val root = (project in file(".")).
   settings(

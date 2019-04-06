@@ -8,7 +8,7 @@ import akka.actor.{ ActorRef, ActorSystem }
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
-import com.stomp.ws.{ WsActor, WsRoutes }
+import com.stomp.ws.WsRoutes
 import akka.http.scaladsl.server.Directives._
 
 //#main-class
@@ -23,7 +23,6 @@ object QuickstartServer extends App with UserRoutes with WsRoutes {
   //#server-bootstrapping
 
   val userRegistryActor: ActorRef = system.actorOf(UserRegistryActor.props, "userRegistryActor")
-  val wsActor: ActorRef = system.actorOf(WsActor.props, "wsActor")
 
   //#main-class
   // from the UserRoutes trait
