@@ -4,9 +4,14 @@
         <script>
             var url = 'ws://localhost:8080/ws';
             var client = Stomp.client(url);
+            client.heartbeat.outgoing = 20000;
+            client.heartbeat.incoming = 0;
             client.connect('login', 'pwd', function() {
                 console.log('connected!!!!');
-                client.send('destination', {}, 'Body, body, body');
+                client.subscribe('/destination', function(message) {
+                    console.log('subscription!!!!' + message);
+                } );
+                //client.send('destination', {}, 'Body, body, body');
             });
         </script>
     </head>

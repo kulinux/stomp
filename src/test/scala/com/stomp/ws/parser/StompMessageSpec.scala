@@ -4,7 +4,7 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class StompMessageSpec extends FlatSpec with Matchers {
   val NULL: Char = 0
-  val stompMsgStr = """CONNECT
+  val stompMsgStr = """Connect
                      |login:login
                      |passcode:pwd
                      |accept-version:1.2,1.1,1.0

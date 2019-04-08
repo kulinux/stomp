@@ -9,9 +9,10 @@ case class StompMessage(
 
 object StompMessage {
 
-  val CONNECT = "CONNECT"
-  val CONNECTED = "CONNECTED"
-  val SEND = "SEND"
+  val Connect = "CONNECT"
+  val Connected = "CONNECTED"
+  val Send = "SEND"
+  val Message = "MESSAGE"
 
   val NULL: Char = 0
 
@@ -49,31 +50,10 @@ object StompMessage {
     res
   }
 
-  def connect(stm: StompMessage): StompMessage =
-    StompMessage(
-      "CONNECTED",
-      Map(
-        "version" -> "1.2",
-        "heart-beat" -> "0,0",
-        "server" -> "StompScala/1.0"))
-
-  def send(stm: StompMessage) = {
-    println(s"SEND $stm")
-
-  }
-
   val unmarshall: Flow[String, StompMessage, _] =
     Flow[String].map(unmarshallImpl(_))
 
-  val process: Flow[StompMessage, Option[StompMessage], _] =
-    Flow[StompMessage].map(sm => {
-      sm.command match {
-        case StompMessage.CONNECT => Some(connect(sm))
-        case StompMessage.SEND => { send(sm); None }
-        case _ => Some(StompMessage("ERROR", Map(), s"Unknow command ${sm.command}"))
-      }
-    })
-
-  val marshall: Flow[StompMessage, String, _] = Flow[StompMessage].map(sm => marshallImpl(sm))
+  val marshall: Flow[StompMessage, String, _] =
+    Flow[StompMessage].map(sm => marshallImpl(sm))
 
 }
