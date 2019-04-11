@@ -1,22 +1,33 @@
 package com.stomp.ws
 
-import akka.actor.{ Actor, ActorRef }
+import java.util.UUID
+
+import akka.actor.{Actor, ActorRef}
 import com.stomp.ws.parser.StompMessage
 
-class WSActor(outActor: ActorRef) extends Actor {
+import scala.collection.mutable
+
+
+class WSActorServer(outActor: ActorRef) extends Actor {
+
+  var client: mutable.Map[String, ActorRef] = mutable.Map()
+
+  override def preStart() = {
+    println (s"PRESTART $self")
+  }
 
   override def receive: Receive = {
-    case WSActor.Init => {
+    case WSActorServer.Init => {
       println("Init received")
-      sender() ! WSActor.Ack
+      sender() ! WSActorServer.Ack
     }
     case sm: StompMessage => {
       println(s"StompMessage $sm")
       stompMessage(sm)
-      sender() ! WSActor.Ack
+      sender() ! WSActorServer.Ack
       test()
     }
-    case WSActor.Complete => println("Complete")
+    case WSActorServer.Complete => println("Complete")
     case other => println(s"Other received $other")
   }
 
@@ -28,15 +39,27 @@ class WSActor(outActor: ActorRef) extends Actor {
     }
   }
 
-  def connect(stm: StompMessage) =
+  def connect(stm: StompMessage) = {
+
+    val uuid = UUID.randomUUID().toString
+    val sessionActor = context.actorOf(WSActorClient.props(uuid))
+    client.put(uuid, sessionActor)
+
     outActor ! StompMessage(
       StompMessage.Connected,
       Map(
         "version" -> "1.2",
         "heart-beat" -> "0,0",
+        "session" -> uuid,
         "server" -> "StompScala/1.0"))
+  }
 
   def send(stm: StompMessage) = {
+    for {
+      sesId <- stm.header.get("session");
+      act <- client.get(sesId)
+    } act ! stm
+
     println(s"SEND $stm")
   }
 
@@ -53,7 +76,7 @@ class WSActor(outActor: ActorRef) extends Actor {
 
 }
 
-object WSActor {
+object WSActorServer {
   case object Init
   case object Ack
   case object Complete

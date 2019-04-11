@@ -13,13 +13,14 @@ trait WsRoutes {
 
   // we leave these abstract, since they will be provided by the App
   implicit def system: ActorSystem
+  implicit def materializer: ActorMaterializer
 
   lazy val inSink: Sink[Message, _] = Flow[Message]
     .filter(_.isText)
     .map(tm => tm.asTextMessage.getStrictText)
     .map(StompMessage.unmarshallImpl)
     .to(
-      Sink.actorRefWithAck(actorRef, WSActor.Init, WSActor.Ack, WSActor.Complete))
+      Sink.actorRefWithAck(actorRef, WSActorServer.Init, WSActorServer.Ack, WSActorServer.Complete))
 
   lazy val outSource: Source[StompMessage, ActorRef] =
     Source.actorRef(1, OverflowStrategy.fail)
@@ -29,7 +30,7 @@ trait WsRoutes {
     .map(str => TextMessage(str))
     .preMaterialize()(ActorMaterializer())
 
-  lazy val actorRef: ActorRef = system.actorOf(Props(new WSActor(outActor._1)))
+  lazy val actorRef: ActorRef = system.actorOf(Props(new WSActorServer(outActor._1)))
 
   val requestHandler: HttpRequest => HttpResponse = {
     case req @ HttpRequest(HttpMethods.GET, Uri.Path("/ws"), _, _, _) =>
@@ -38,8 +39,7 @@ trait WsRoutes {
         case None => HttpResponse(400, entity = "Not a valid websocket request!")
       }
     case r: HttpRequest =>
-      val actorMaterializer = ActorMaterializer()
-      r.discardEntityBytes()(actorMaterializer) // important to drain incoming HTTP Entity stream
+      r.discardEntityBytes() // important to drain incoming HTTP Entity stream
       HttpResponse(404, entity = "Unknown resource!")
   }
 

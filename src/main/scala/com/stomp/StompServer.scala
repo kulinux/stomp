@@ -12,7 +12,7 @@ import com.stomp.ws.WsRoutes
 import akka.http.scaladsl.server.Directives._
 
 //#main-class
-object QuickstartServer extends App with UserRoutes with WsRoutes {
+object StompServer extends App with WsRoutes {
 
   // set up ActorSystem and other dependencies here
   //#main-class
@@ -22,15 +22,15 @@ object QuickstartServer extends App with UserRoutes with WsRoutes {
   implicit val executionContext: ExecutionContext = system.dispatcher
   //#server-bootstrapping
 
-  val userRegistryActor: ActorRef = system.actorOf(UserRegistryActor.props, "userRegistryActor")
 
   //#main-class
   // from the UserRoutes trait
-  lazy val routes: Route = userRoutes ~ wsRoutes
+  lazy val routes: Route = wsRoutes
   //#main-class
 
   //#http-server
-  val serverBinding: Future[Http.ServerBinding] = Http().bindAndHandle(routes, "localhost", 8080)
+  val serverBinding: Future[Http.ServerBinding] =
+    Http().bindAndHandle(routes, "localhost", 8080)
 
   serverBinding.onComplete {
     case Success(bound) =>
