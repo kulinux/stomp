@@ -5,12 +5,10 @@ import java.util.UUID
 import akka.actor.{Actor, ActorRef}
 import com.stomp.ws.parser.StompMessage
 
-import scala.collection.mutable
 
 
 class WSActorServer(outActor: ActorRef) extends Actor {
 
-  var client: mutable.Map[String, ActorRef] = mutable.Map()
 
   override def preStart() = {
     println (s"PRESTART $self")
@@ -33,8 +31,8 @@ class WSActorServer(outActor: ActorRef) extends Actor {
 
   def stompMessage(sm: StompMessage): Unit = {
     sm.command match {
-      case StompMessage.Connect => Some(connect(sm))
-      case StompMessage.Send => { send(sm); None }
+      case StompMessage.Connect => connect(sm)
+      case StompMessage.Send => send(sm)
       case _ => Some(StompMessage("ERROR", Map(), s"Unknow command ${sm.command}"))
     }
   }
@@ -42,8 +40,6 @@ class WSActorServer(outActor: ActorRef) extends Actor {
   def connect(stm: StompMessage) = {
 
     val uuid = UUID.randomUUID().toString
-    val sessionActor = context.actorOf(WSActorClient.props(uuid))
-    client.put(uuid, sessionActor)
 
     outActor ! StompMessage(
       StompMessage.Connected,
@@ -55,11 +51,6 @@ class WSActorServer(outActor: ActorRef) extends Actor {
   }
 
   def send(stm: StompMessage) = {
-    for {
-      sesId <- stm.header.get("session");
-      act <- client.get(sesId)
-    } act ! stm
-
     println(s"SEND $stm")
   }
 
