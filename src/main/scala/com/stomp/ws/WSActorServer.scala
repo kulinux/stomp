@@ -10,10 +10,6 @@ import com.stomp.ws.parser.StompMessage
 class WSActorServer(outActor: ActorRef) extends Actor {
 
 
-  override def preStart() = {
-    println (s"PRESTART $self")
-  }
-
   override def receive: Receive = {
     case WSActorServer.Init => {
       println("Init received")
@@ -28,6 +24,10 @@ class WSActorServer(outActor: ActorRef) extends Actor {
     case WSActorServer.Complete => println("Complete")
     case other => println(s"Other received $other")
   }
+
+  //TODO???
+  def idle: Receive = ???
+  def connected: Receive = ???
 
   def stompMessage(sm: StompMessage): Unit = {
     sm.command match {
