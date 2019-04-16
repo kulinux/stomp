@@ -17,7 +17,7 @@ object StompServer extends App with WsRoutes {
   // set up ActorSystem and other dependencies here
   //#main-class
   //#server-bootstrapping
-  implicit val system: ActorSystem = ActorSystem("helloAkkaHttpServer")
+  implicit val system: ActorSystem = ActorSystem("stomp")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = system.dispatcher
   //#server-bootstrapping

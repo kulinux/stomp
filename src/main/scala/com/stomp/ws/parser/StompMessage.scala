@@ -9,10 +9,13 @@ case class StompMessage(
 
 object StompMessage {
 
+
   val Connect = "CONNECT"
   val Connected = "CONNECTED"
   val Send = "SEND"
   val Message = "MESSAGE"
+  val Subscribe = "SUBSCRIBE"
+  val UnSubscribe = "UNSUBSCRIBE"
 
   val NULL: Char = 0
 

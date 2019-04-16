@@ -8,14 +8,14 @@
             client.heartbeat.outgoing = 20000;
             client.heartbeat.incoming = 0;
             client.connect('login', 'pwd', function(msg) {
-                let session = msg.headers['session'];
                 console.log('connected!!!! ' + msg);
-                /*
-                client.subscribe('/destination', function(message) {
+                let subs = client.subscribe('/destination', function(message) {
                     console.log('subscription!!!!' + message);
                 } );
-                */
-                client.send('destination', {'session': session}, 'Body, body, body');
+                console.log('Id Subscription ', subs );
+                subs.unsubscribe();
+
+                client.send('mono', {}, 'Body, body, body');
             });
         </script>
     </head>
