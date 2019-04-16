@@ -5,8 +5,8 @@
             let url = 'ws://localhost:8080/ws';
 
             var client = Stomp.client(url);
-            client.heartbeat.outgoing = 20000;
-            client.heartbeat.incoming = 0;
+            client.heartbeat.outgoing = 5000;
+            client.heartbeat.incoming = 5000;
             client.connect('login', 'pwd', function(msg) {
                 console.log('connected!!!! ' + msg);
                 let subs = client.subscribe('/destination', function(message) {

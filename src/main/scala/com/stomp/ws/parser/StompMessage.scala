@@ -16,6 +16,7 @@ object StompMessage {
   val Message = "MESSAGE"
   val Subscribe = "SUBSCRIBE"
   val UnSubscribe = "UNSUBSCRIBE"
+  val Ping = ""
 
   val NULL: Char = 0
 
@@ -40,7 +41,12 @@ object StompMessage {
     StompMessage(command, headers, body)
   }
 
-  def marshallImpl(message: StompMessage) = {
+  def marshallImpl(message: StompMessage): String = {
+    if(message.command.isEmpty
+      && message.header.isEmpty
+      && message.body.isEmpty )
+       return "\n"
+
     val res = message.command + "\n" +
       message.header
       .map(hd => hd._1 + ":" + hd._2)
@@ -50,7 +56,7 @@ object StompMessage {
       message.body +
       "\n" +
       NULL
-    res
+    return res
   }
 
   val unmarshall: Flow[String, StompMessage, _] =
@@ -58,5 +64,6 @@ object StompMessage {
 
   val marshall: Flow[StompMessage, String, _] =
     Flow[StompMessage].map(sm => marshallImpl(sm))
+
 
 }
