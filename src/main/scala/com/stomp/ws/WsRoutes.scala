@@ -9,13 +9,15 @@ import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.stream.{ActorMaterializer, OverflowStrategy}
 import com.stomp.ws.parser.StompMessage
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+
 
 trait WsRoutes {
 
   implicit def system: ActorSystem
   implicit def materializer: ActorMaterializer
+  val ec = ExecutionContext.global
 
   def actorRef(outActor: ActorRef): ActorRef = system.actorOf(Props(new WSActorServer(outActor)))
 
@@ -26,26 +28,12 @@ trait WsRoutes {
     .map(str => TextMessage(str))
 
 
-  lazy val toStrict: Flow[Message, Message, _] = Flow[Message]
-    .collect {
-      case TextMessage.Strict(msg) ⇒
-        Future.successful(msg)
-      case TextMessage.Streamed(stream) => stream
-        .limit(100)                   // Max frames we are willing to wait for
-        .completionTimeout(5 seconds) // Max time until last frame
-        .runFold("")(_ + _)           // Merges the frames
-        .flatMap(msg => Future.successful(msg))(system.dispatcher)
-    }
-    .mapAsync(parallelism = 3)(identity)
-    .map {
-      case msg: String => TextMessage.Strict(msg)
-    }
+  lazy val toStrict: Flow[Message, String, _] = Flow[Message]
+    .map(f => f.asTextMessage.asScala.toStrict(50 seconds).map(f => f.text)(system.dispatcher))
+    .mapAsync(parallelism = 1)(identity)
 
   lazy val inFlow: Flow[Message, StompMessage, _] =
     toStrict
-    .filter(_.isText)
-    .map(_.asTextMessage)
-    .map(tm => tm.getStrictText)
     .map(StompMessage.unmarshallImpl)
 
 
