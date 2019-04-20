@@ -1,6 +1,5 @@
 package com.stomp.ws
 
-import java.util.UUID
 
 import akka.actor.{Actor, ActorRef, Cancellable}
 import akka.cluster.pubsub.DistributedPubSub
@@ -16,29 +15,7 @@ class WSActorServer(outActor: ActorRef) extends Actor {
 
   val subscriptions: mutable.Map[String, String] = mutable.Map()
   var pongScheduler = Option.empty[Cancellable]
-
-
-  override def receive: Receive = {
-    case WSActorServer.Init => {
-      sender() ! WSActorServer.Ack
-      context.become(idle)
-    }
-    case other => println(s"Other received $other")
-  }
-
-
-  override def postStop(): Unit = {
-    super.postStop()
-
-    for{ ch <- pongScheduler } ch.cancel()
-  }
-
-  def idle: Receive = {
-    case sm @ StompMessage(StompMessage.Connect, _, _) => {
-      connect(sm)
-      context.become(connected)
-    }
-  }
+  lazy val mediator = DistributedPubSub(context.system).mediator
 
 
 
@@ -51,10 +28,41 @@ class WSActorServer(outActor: ActorRef) extends Actor {
     case SubscribeAck(Subscribe(channel, _, _)) => subscribed(channel)
     case UnsubscribeAck(Unsubscribe(channel, _, _)) => unsubscribed(channel)
     case "PONG" => pong()
-    case um => println(s"Unknown Message $um")
+    case _ if(sender().path.address.hasLocalScope) => println("Unkonwn message from client $msg")
+    case um => sendToClient(um)
   }
 
-  //Messages Handler//
+  override def unhandled(msg: Any) = { println(s"Unhandled $msg")}
+
+  def sendToClient(msg: Any): Unit = {
+    println(s"Message received $msg")
+    outActor ! StompMessage("SEND", Map(), msg.asInstanceOf[String])
+  }
+
+  def send(stm: StompMessage) = {
+    println(s"SEND $stm")
+    sender() ! WSActorServer.Ack
+  }
+
+  override def receive: Receive = {
+    case WSActorServer.Init => {
+      sender() ! WSActorServer.Ack
+      context.become(idle)
+    }
+    case other => println(s"Other received $other")
+  }
+
+  override def postStop(): Unit = {
+    super.postStop()
+    for{ ch <- pongScheduler } ch.cancel()
+  }
+
+  def idle: Receive = {
+    case sm @ StompMessage(StompMessage.Connect, _, _) => {
+      connect(sm)
+      context.become(connected)
+    }
+  }
 
   def subscribed(channel: String): Unit = { println("subscribed ack") }
 
@@ -67,6 +75,7 @@ class WSActorServer(outActor: ActorRef) extends Actor {
       id <- sm.header.get("id")
       chn <- sm.header.get("destination")
     } {
+      println(s"Subscribe to $chn")
       mediator ! Subscribe(chn, self)
       subscriptions.put(id, chn)
     }
@@ -129,21 +138,8 @@ class WSActorServer(outActor: ActorRef) extends Actor {
     sender() ! WSActorServer.Ack
   }
 
-  def send(stm: StompMessage) = {
-    println(s"SEND $stm")
-    sender() ! WSActorServer.Ack
-  }
 
-  def test() = {
-    outActor ! StompMessage(
-      StompMessage.Message,
-      Map(
-        "subscription" -> "sub-0",
-        "message-id" -> "sub-0",
-        "destination" -> "/destination",
-        "content-type" -> "text/plain"),
-      "This is message")
-  }
+
 
 }
 

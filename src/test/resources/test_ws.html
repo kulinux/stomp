@@ -13,9 +13,9 @@
                     console.log('subscription!!!!' + message);
                 } );
                 console.log('Id Subscription ', subs );
-                subs.unsubscribe();
+                //subs.unsubscribe();
 
-                for (var i = 0; i < 100000; i++) {
+                for (var i = 0; i < 1; i++) {
                     console.log('****************************')
                     client.send('mono', {}, 'Body, body, body aaaaaaaaaaaaaaaaaaaaaa' + i);
                 }
