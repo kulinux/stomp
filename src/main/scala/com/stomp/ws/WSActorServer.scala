@@ -17,8 +17,6 @@ class WSActorServer(outActor: ActorRef) extends Actor {
   var pongScheduler = Option.empty[Cancellable]
   lazy val mediator = DistributedPubSub(context.system).mediator
 
-
-
   def connected: Receive = {
     case sm @ StompMessage(StompMessage.Send, _, _) => send(sm)
     case sm @ StompMessage(StompMessage.Subscribe, _, _) => subscribe(sm)
